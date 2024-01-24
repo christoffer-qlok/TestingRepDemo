@@ -29,7 +29,7 @@ namespace TestingRepDemoTests
                 {
                     StatusCode = HttpStatusCode.OK,
                     Content = new StringContent("{\"city\": \"test-city\"}")
-                } );
+                });
             HttpClient mockClient = new HttpClient(mockHandler.Object);
             IpInfoService service = new IpInfoService(mockClient);
 
@@ -38,6 +38,31 @@ namespace TestingRepDemoTests
 
             // Assert
             Assert.AreEqual("test-city", result);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(HttpRequestException))]
+        public async Task GetCityAsync_ExceptionOnBadStatusCode()
+        {
+            // Arrange
+            var mockHandler = new Mock<HttpMessageHandler>();
+            mockHandler
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>()
+                )
+                .ReturnsAsync(new HttpResponseMessage()
+                {
+                    StatusCode = HttpStatusCode.InternalServerError,
+                    Content = new StringContent("{\"city\": \"test-city\"}")
+                });
+            HttpClient mockClient = new HttpClient(mockHandler.Object);
+            IpInfoService service = new IpInfoService(mockClient);
+
+            // Act
+            string result = await service.GetCityAsync("1.1.1.1");
         }
     }
 }
